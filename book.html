@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Book Library</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background: #333;
+            color: #fff;
+            padding: 20px 0;
+            text-align: center;
+        }
+        main {
+            padding: 20px;
+            max-width: 800px;
+            margin: auto;
+        }
+        section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            margin-top: 0;
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+        input {
+            margin: 5px 0 15px;
+            padding: 10px;
+            width: 100%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+        }
+        button:hover {
+            background: #218838;
+        }
+        #search {
+            margin-bottom: 15px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        li:last-child {
+            border-bottom: none;
+        }
+        .borrowed {
+            color: #d9534f;
+        }
+        .available {
+            color: #5bc0de;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>My Book Library</h1>
+    </header>
+    <main>
+        <section id="add-book">
+            <h2>Add a New Book</h2>
+            <form id="book-form">
+                <label for="title">Book Title:</label>
+                <input type="text" id="title" required>
+                
+                <label for="author">Author:</label>
+                <input type="text" id="author" required>
+                
+                <label for="category">Category:</label>
+                <input type="text" id="category" required>
+                
+                <button type="submit">Add Book</button>
+            </form>
+        </section>
+        
+        <section id="book-list">
+            <h2>My Books</h2>
+            <input type="text" id="search" placeholder="Search books..." onkeyup="searchBooks()">
+            <ul id="books">
+                <li>No books added yet.</li>
+            </ul>
+        </section>
+
+        <section id="borrowing-history">
+            <h2>Borrowing History</h2>
+            <ul id="history">
+                <li>No borrowing history.</li>
+            </ul>
+        </section>
+    </main>
+    <script>
+        const books = [];
+        const history = [];
+
+        document.getElementById('book-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const title = document.getElementById('title').value;
+            const author = document.getElementById('author').value;
+            const category = document.getElementById('category').value;
+
+            const book = { title, author, category, borrowed: false };
+            books.push(book);
+            displayBooks();
+            this.reset();
+        });
+
+        function displayBooks() {
+            const bookList = document.getElementById('books');
+            bookList.innerHTML = '';
+
+            if (books.length === 0) {
+                bookList.innerHTML = '<li>No books added yet.</li>';
+                return;
+            }
+
+            books.forEach((book, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span class="${book.borrowed ? 'borrowed' : 'available'}">
+                        ${book.title} by ${book.author} [${book.category}]
+                    </span>
+                    <div>
+                        <button onclick="borrowBook(${index})" ${book.borrowed ? 'disabled' : ''}>Borrow</button>
+                        <button onclick="returnBook(${index})" ${!book.borrowed ? 'disabled' : ''}>Return</button>
+                    </div>
+                `;
+                bookList.appendChild(li);
+            });
+        }
+
+        function borrowBook(index) {
+            if (!books[index].borrowed) {
+                books[index].borrowed = true;
+                history.push(`Borrowed: ${books[index].title} by ${books[index].author}`);
+                displayBooks();
+                displayHistory();
+            }
+        }
+
+        function returnBook(index) {
+            if (books[index].borrowed) {
+                books[index].borrowed = false;
+                history.push(`Returned: ${books[index].title} by ${books[index].author}`);
+                displayBooks();
+                displayHistory();
+            }
+        }
+
+        function displayHistory() {
+            const historyList = document.getElementById('history');
+            historyList.innerHTML = '';
+
+            if (history.length === 0) {
+                historyList.innerHTML = '<li>No borrowing history.</li>';
+                return;
+            }
+
+            history.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = item;
+                historyList.appendChild(li);
+            });
+        }
+
+        function searchBooks() {
+            const query = document.getElementById('search').value.toLowerCase();
+            const filteredBooks = books.filter(book => 
+                book.title.toLowerCase().includes(query) || 
+                book.author.toLowerCase().includes(query)
+            );
+
+            const bookList = document.getElementById('books');
+            bookList.innerHTML = '';
+
+            if (filteredBooks.length === 0) {
+                bookList.innerHTML = '<li>No matching books found.</li>';
+                return;
+            }
+
+            filteredBooks.forEach((book, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span class="${book.borrowed ? 'borrowed' : 'available'}">
+                        ${book.title} by ${book.author} [${book.category}]
+                    </span>
+                    <div>
+                        <button onclick="borrowBook(${books.indexOf(book)})" ${book.borrowed ? 'disabled' : ''}>Borrow</button>
+                        <button onclick="returnBook(${books.indexOf(book)})" ${!book.borrowed ? 'disabled' : ''}>Return</button>
+                    </div>
+                `;
+                bookList.appendChild(li);
+            });
+        }
+    </script>
+</body>
+</html>
